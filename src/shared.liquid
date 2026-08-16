@@ -28,3 +28,34 @@
 {%- endcomment -%}
 {%- capture title_bar_icon_svg -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M2 19L9 6L12.8 12L15.5 8.5L22 19Z"/></svg>{%- endcapture -%}
 {%- assign title_bar_icon = title_bar_icon_svg | base64_encode -%}
+
+{%- comment -%}
+  title_bar markup is identical across full/half_horizontal/half_vertical;
+  quadrant uses the compact variant (no date, tighter space). Captured once
+  here so a copy change doesn't need editing in 4 places.
+{%- endcomment -%}
+{%- capture title_bar -%}
+<div class="title_bar">
+  <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
+  <span class="title">Vuelta a España</span>
+  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }} of 21 · {{ last_stage_date_label }}{% else %}Classification{% endif %}</span>
+</div>
+{%- endcapture -%}
+
+{%- capture title_bar_compact -%}
+<div class="title_bar">
+  <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
+  <span class="title">Vuelta a España</span>
+  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }} of 21{% else %}Classification{% endif %}</span>
+</div>
+{%- endcapture -%}
+
+{%- comment -%}
+  Shared "no GC yet" empty state for the two sizes with identical copy
+  (full.liquid keeps its own longer message).
+{%- endcomment -%}
+{%- capture gc_empty_state -%}
+<div class="flex flex--row flex--center h--full w--full">
+  <span class="label label--gray">GC not available yet</span>
+</div>
+{%- endcapture -%}
