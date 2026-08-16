@@ -1,24 +1,27 @@
-{%- comment -%}
-  SCAFFOLD — see full.liquid comment. Top 5, stacked.
-{%- endcomment -%}
 <div class="layout layout--col gap--small">
 
-  <div class="flex flex--col flex--center-x gap--xsmall text--center">
-    <span class="title title--base">GENERAL CLASSIFICATION</span>
-    {% if last_stage %}<span class="label label--small label--gray">AFTER STAGE {{ last_stage.number }}</span>{% endif %}
-  </div>
-
-  <div class="divider"></div>
-
   {% if has_gc %}
+    {% if has_stage_result %}
+      <span class="label label--filled no-shrink">STAGE {{ last_stage.number }} WINNERS</span>
+      <div class="flex flex--col gap--xsmall w--full">
+        {% for row in stage_rows limit: 3 %}
+          <div class="flex flex--row flex--center-y gap--small w--full">
+            <span class="value value--small value--tnums no-shrink w--5">{{ row.position }}</span>
+            <span class="label label--small grow">{{ row.name | upcase | truncate: 20 }}</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="divider"></div>
+    {% endif %}
+
+    <span class="label label--filled no-shrink">GC</span>
     <div class="flex flex--col gap--xsmall w--full">
       {% for row in gc_rows limit: 5 %}
         <div class="flex flex--row flex--center-y gap--small w--full">
-          <span class="value value--small value--tnums no-shrink" style="width: 20px;">{{ row.position }}</span>
-          <span class="label label--small" data-clamp="1" style="flex: 1;">{{ row.name | upcase }}</span>
-          <span class="value value--small value--tnums no-shrink">
-            {% if row.gap %}+{{ row.gap }}{% else %}—{% endif %}
-          </span>
+          <span class="value value--small value--tnums no-shrink w--5">{{ row.position }}</span>
+          <span class="label label--small grow">{{ row.name | upcase | truncate: 20 }}</span>
+          <span class="value value--small value--tnums no-shrink">{% if row.gap %}+{{ row.gap }}{% else %}—{% endif %}</span>
         </div>
       {% endfor %}
     </div>
@@ -33,5 +36,5 @@
 <div class="title_bar">
   <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
   <span class="title">Vuelta a España</span>
-  <span class="instance">Classification</span>
+  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }} of 21 · {{ last_stage_date_label }}{% else %}Classification{% endif %}</span>
 </div>
