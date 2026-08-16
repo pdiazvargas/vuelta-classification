@@ -168,7 +168,9 @@ async function run(input) {
             name: sanitizeString(`${c.firstname || ""} ${c.lastname || ""}`.trim()),
             team: sanitizeString(
               teamById.get(pointerId(c.$team))?.nameShort || teamById.get(pointerId(c.$team))?.name
-            )
+            ),
+            // ASO's own image CDN — used for the stage-winner headshots.
+            photo: sanitizeString(c.profile_sm || c.profile || "")
           }
         ])
       );
@@ -209,6 +211,7 @@ async function run(input) {
           bib: r.bib,
           name: rider.name || `Bib ${r.bib}`,
           team: rider.team || "",
+          photo: rider.photo || "",
           gapMs: r.relative ?? null,
           gap: formatGap(r.relative)
         };
