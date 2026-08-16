@@ -20,7 +20,7 @@ Then open `http://localhost:4567`.
 
 ## Deploying to TRMNL
 
-This plugin has never been pushed — there's no plugin id yet. See the TODOs in `src/settings.yml` and `.github/workflows/trmnl.yml` before deploying.
+Pushed once manually — plugin id `443984` ([dashboard](https://trmnl.com/plugin_settings/443984/edit)). CI (`.github/workflows/trmnl.yml`) re-pushes on every merge to `main`, gated behind `trmnlp lint`; it needs a `TRMNL_API_KEY` repo secret to do that (not yet set — see `plan.md`). Not yet added to a device playlist.
 
 ## Disclaimer
 

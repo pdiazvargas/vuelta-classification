@@ -17,10 +17,7 @@ jobs:
 
   push:
     needs: lint
-    # Disabled until a plugin id exists (see TODO below) — auto-push on every
-    # merge to main would otherwise create a new orphaned TRMNL plugin per
-    # run. Flip to `github.ref == 'refs/heads/main'` once --id is filled in.
-    if: false
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,11 +25,6 @@ jobs:
         with:
           ruby-version: "4.0"
       - run: gem install trmnl_preview
-      # TODO: no plugin id yet — this repo has never been pushed to TRMNL.
-      # Push once manually from a local machine (`trmnlp push`, no --id) to
-      # create the plugin, then add `--id <the-id-TRMNL-assigns>` here and
-      # flip the `if:` above back on — same pattern as the sibling "Vuelta a
-      # España Stages" plugin, which pins --id 414982.
-      - run: trmnlp push --force
+      - run: trmnlp push --id 443984 --force
         env:
           TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
