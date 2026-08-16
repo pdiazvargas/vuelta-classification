@@ -1,7 +1,7 @@
 {%- comment -%}
-  SCAFFOLD — shared computed variables for all Vuelta a España Classification
-  view sizes. See ../plan.md before treating this as a finished design; it
-  currently just exposes the raw gc / stageResult arrays from transform.js.
+  Shared computed variables for all Vuelta a España Classification view sizes.
+  gc_rows = general classification (overall), stage_rows = most recent stage
+  result ("stage winners"). Both come straight from transform.js.
 {%- endcomment -%}
 
 {%- assign gc_rows = gc | default: data.gc -%}
@@ -11,12 +11,20 @@
 {%- assign has_gc = false -%}
 {%- if gc_rows and gc_rows.size > 0 -%}
   {%- assign has_gc = true -%}
+  {%- assign gc_leader = gc_rows[0] -%}
 {%- endif -%}
 
+{%- assign has_stage_result = false -%}
+{%- if stage_rows and stage_rows.size > 0 -%}
+  {%- assign has_stage_result = true -%}
+  {%- assign stage_winner = stage_rows[0] -%}
+{%- endif -%}
+
+{%- assign last_stage_date_label = last_stage.date | date: "%b %d" -%}
+
 {%- comment -%}
-  Inline SVG mark for the title_bar icon — a simple podium/ranking glyph,
-  single black fill, 24x24. Swap for something more considered once the
-  visual design pass happens (see plan.md).
+  Inline SVG mark for the title_bar icon — same mountain silhouette as the
+  sibling "Stages" plugin, single black fill, 24x24, per user request.
 {%- endcomment -%}
-{%- capture title_bar_icon_svg -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M3 21V13H8V21H3ZM9 21V9H14V21H9ZM15 21V5H20V21H15Z"/></svg>{%- endcapture -%}
+{%- capture title_bar_icon_svg -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M2 19L9 6L12.8 12L15.5 8.5L22 19Z"/></svg>{%- endcapture -%}
 {%- assign title_bar_icon = title_bar_icon_svg | base64_encode -%}

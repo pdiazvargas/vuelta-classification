@@ -1,27 +1,44 @@
-{%- comment -%}
-  SCAFFOLD — see full.liquid comment. Top 5 only, single row per rider.
-{%- endcomment -%}
 <div class="layout layout--col gap--small">
 
-  <div class="flex flex--row flex--center-y gap--small">
-    <span class="title title--base">GC</span>
-    {% if last_stage %}<span class="label label--gray label--small">AFTER STAGE {{ last_stage.number }}</span>{% endif %}
-  </div>
-
   {% if has_gc %}
-    <div class="flex flex--col gap--xsmall w--full">
-      {% for row in gc_rows limit: 5 %}
-        <div class="flex flex--row flex--center-y gap--small w--full">
-          <span class="value value--small value--tnums no-shrink" style="width: 20px;">{{ row.position }}</span>
-          <span class="label label--small" data-clamp="1" style="flex: 1;">{{ row.name | upcase }}</span>
-          <span class="value value--small value--tnums no-shrink">
-            {% if row.gap %}+{{ row.gap }}{% else %}—{% endif %}
-          </span>
-        </div>
-      {% endfor %}
+    <div class="grid grid--cols-12 gap--small">
+      <div class="col--span-3 flex flex--col flex--center-y gap--xsmall">
+        <span class="label label--gray label--small">STAGE {{ last_stage.number }} WINNER</span>
+        {% if has_stage_result %}
+          <span class="title title--small">{{ stage_winner.name | upcase | truncate: 22 }}</span>
+          <span class="label label--small label--gray">{{ stage_winner.team | upcase | truncate: 26 }}</span>
+        {% else %}
+          <span class="label label--gray">—</span>
+        {% endif %}
+      </div>
+
+      <div class="col--span-9">
+        <table class="table table--xsmall" data-table-limit="true">
+          <thead>
+            <tr>
+              <th class="pr--3"><span class="label label--small">GC</span></th>
+              <th><span class="label label--small">RIDER</span></th>
+              <th><span class="label label--small">TEAM</span></th>
+              <th><span class="label label--small">GAP</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in gc_rows limit: 5 %}
+              <tr>
+                <td class="pr--3"><span class="value value--xsmall value--tnums">{{ row.position }}</span></td>
+                <td><span class="label label--small">{{ row.name | upcase | truncate: 16 }}</span></td>
+                <td><span class="label label--small label--gray">{{ row.team | upcase | truncate: 20 }}</span></td>
+                <td><span class="label label--small text--gray-25">{% if row.gap %}+{{ row.gap }}{% else %}—{% endif %}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   {% else %}
-    <span class="label label--gray label--small">GC not available yet</span>
+    <div class="flex flex--row flex--center h--full w--full">
+      <span class="label label--gray">GC not available yet</span>
+    </div>
   {% endif %}
 
 </div>
@@ -29,5 +46,5 @@
 <div class="title_bar">
   <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
   <span class="title">Vuelta a España</span>
-  <span class="instance">Classification</span>
+  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }} of 21 · {{ last_stage_date_label }}{% else %}Classification{% endif %}</span>
 </div>

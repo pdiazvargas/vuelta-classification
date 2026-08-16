@@ -4,7 +4,7 @@
 // so all live testing so far was done against the completed 2024/2025 editions).
 // Endpoint shapes and open questions are documented in plan.md — read that first.
 async function run(input) {
-  const year = 2026;
+  const year = resolveYear(input);
   const baseUrl = "https://racecenter.lavuelta.es";
 
   // Separate regex for checking (no g flag) vs replacing (g flag)
@@ -91,6 +91,36 @@ async function run(input) {
     return `${parts.find((p) => p.type === "year").value}-${parts.find((p) => p.type === "month").value}-${parts.find((p) => p.type === "day").value}`;
   }
 
+  // TRMNL's docs don't pin down exactly where custom field selections land on
+  // the transform input, so check the shapes seen in practice rather than
+  // assuming one (same approach as the sibling "Stages" plugin).
+  function customField(keyname, fallback) {
+    const sources = [
+      input?.custom_fields,
+      input?.custom_fields_values,
+      input?.trmnl?.plugin_settings?.custom_fields_values,
+      input?.trmnl?.custom_fields_values
+    ];
+
+    for (const source of sources) {
+      if (source && typeof source === "object" && source[keyname]) {
+        return source[keyname];
+      }
+    }
+
+    return fallback;
+  }
+
+  // "Season" custom field lets a user browse a past year's final GC/stage
+  // winners before the current race starts (or after it's over) — pulls the
+  // first 4-digit number out of the selected option ("Current (2026)", "2024",
+  // etc.) rather than matching the label text exactly.
+  function resolveYear() {
+    const raw = String(customField("classification_year", "2025"));
+    const match = raw.match(/\d{4}/);
+    return match ? Number(match[0]) : 2025;
+  }
+
   // --- Stage list: used only to figure out which stage number is the most
   // recently completed one (or null pre-race). Same endpoint the sibling
   // "Stages" plugin polls; always populated regardless of race status.
@@ -138,7 +168,9 @@ async function run(input) {
             name: sanitizeString(`${c.firstname || ""} ${c.lastname || ""}`.trim()),
             team: sanitizeString(
               teamById.get(pointerId(c.$team))?.nameShort || teamById.get(pointerId(c.$team))?.name
-            )
+            ),
+            // ASO's own image CDN — used for the stage-winner headshots.
+            photo: sanitizeString(c.profile_sm || c.profile || "")
           }
         ])
       );
@@ -179,6 +211,7 @@ async function run(input) {
           bib: r.bib,
           name: rider.name || `Bib ${r.bib}`,
           team: rider.team || "",
+          photo: rider.photo || "",
           gapMs: r.relative ?? null,
           gap: formatGap(r.relative)
         };
