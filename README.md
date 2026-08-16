@@ -1,8 +1,12 @@
 # trmnl-vuelta-classification
 
-**Status: functional, verified against 2024 archived data; not yet pushed to TRMNL.** See `plan.md` for the handoff — API research, verification notes, and remaining next steps (mainly a visual design pass) before this is fully finished.
+**Status: functional, design pass complete, pushed to TRMNL** (plugin id `443984`).
 
 A [TRMNL](https://usetrmnl.com) private plugin (planned) that shows the current La Vuelta a España general classification and the most recent stage result. Sibling to the [`vuelta-a-espana-stages`](../vuelta-a-espana-stages) plugin, which covers today's/tomorrow's stage route and profile but not standings.
+
+![Full layout preview](docs/preview-full.png)
+
+*Live preview via `trmnlp serve`, showing Stage 21 of the 2025 edition (Alalpardo → Madrid) pulled from `racecenter.lavuelta.es`.*
 
 ## How it works (intended)
 
@@ -20,7 +24,7 @@ Then open `http://localhost:4567`.
 
 ## Deploying to TRMNL
 
-Pushed once manually — plugin id `443984` ([dashboard](https://trmnl.com/plugin_settings/443984/edit)). CI (`.github/workflows/trmnl.yml`) re-pushes on every merge to `main`, gated behind `trmnlp lint`; it needs a `TRMNL_API_KEY` repo secret to do that (not yet set — see `plan.md`). Not yet added to a device playlist.
+Pushed once manually — plugin id `443984` ([dashboard](https://trmnl.com/plugin_settings/443984/edit)). CI (`.github/workflows/trmnl.yml`) re-pushes on every merge to `main`, gated behind `trmnlp lint`; it needs a `TRMNL_API_KEY` repo secret to do that. Not yet added to a device playlist.
 
 ## Disclaimer
 
