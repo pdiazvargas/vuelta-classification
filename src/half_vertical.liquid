@@ -26,15 +26,9 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="flex flex--row flex--center h--full w--full">
-      <span class="label label--gray">GC not available yet</span>
-    </div>
+    {{ gc_empty_state }}
   {% endif %}
 
 </div>
 
-<div class="title_bar">
-  <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
-  <span class="title">Vuelta a España</span>
-  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }} of 21 · {{ last_stage_date_label }}{% else %}Classification{% endif %}</span>
-</div>
+{{ title_bar }}

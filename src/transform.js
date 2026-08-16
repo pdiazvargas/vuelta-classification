@@ -1,10 +1,7 @@
-// SCAFFOLD — see ../plan.md before extending this file.
-//
 // Verified against racecenter.lavuelta.es on 2026-08-15 (race starts 2026-08-22,
 // so all live testing so far was done against the completed 2024/2025 editions).
-// Endpoint shapes and open questions are documented in plan.md — read that first.
 async function run(input) {
-  const year = resolveYear(input);
+  const year = resolveYear();
   const baseUrl = "https://racecenter.lavuelta.es";
 
   // Separate regex for checking (no g flag) vs replacing (g flag)
@@ -135,116 +132,88 @@ async function run(input) {
     ? completedStages[completedStages.length - 1]
     : null;
 
-  // TODO(plan.md "Open questions"): once the race is live, confirm whether
-  // rankingType-{year}-{n} for the *in-progress* stage 404s/204s cleanly, or
-  // whether it needs the previousStageFallback-style "-1" the SPA does. For
-  // now this only ever asks for a stage that's already finished.
   const stageNumber = lastCompletedStage ? Number(lastCompletedStage.stage) : null;
 
   let gc = [];
   let stageResult = [];
-  let riderById = new Map();
-  let teamById = new Map();
 
   if (stageNumber !== null) {
     try {
       // --- Rider/team lookup tables. Rankings below reference riders only by
       // bib number or by a "$rider": "allCompetitors-{year}:{hash}" pointer —
-      // there is no embedded name/team on the ranking rows themselves.
-      const [competitorsRaw, teamsRaw] = await Promise.all([
+      // there is no embedded name/team on the ranking rows themselves. None of
+      // these four fetches depend on each other's results, so they all run
+      // concurrently.
+      const [competitorsRaw, teamsRaw, rankingRaw, arrivalRaw] = await Promise.all([
         fetchJson(`/api/allCompetitors-${year}`),
-        fetchJson(`/api/team-${year}`)
+        fetchJson(`/api/team-${year}`),
+        fetchJson(`/api/rankingType-${year}-${stageNumber}`),
+        fetchJson(`/api/rankingTypeArrival-${year}-${stageNumber}`)
       ]);
 
+      const teamById = new Map();
       for (const t of teamsRaw || []) {
         if (t && t._id) teamById.set(t._id, t);
       }
 
-      riderById = new Map(
+      // Raw fields only — sanitized lazily in mapRankingRow, for just the
+      // handful of riders (<=11) that actually end up on a rendered row,
+      // instead of eagerly for the whole ~150-200 rider field.
+      const riderById = new Map(
         (competitorsRaw || []).map((c) => [
           c._id,
           {
-            bib: c.bib,
-            name: sanitizeString(`${c.firstname || ""} ${c.lastname || ""}`.trim()),
-            team: sanitizeString(
-              teamById.get(pointerId(c.$team))?.nameShort || teamById.get(pointerId(c.$team))?.name
-            ),
+            firstname: c.firstname,
+            lastname: c.lastname,
+            team: teamById.get(pointerId(c.$team))?.nameShort || teamById.get(pointerId(c.$team))?.name,
             // ASO's own image CDN — used for the stage-winner headshots.
-            photo: sanitizeString(c.profile_sm || c.profile || "")
+            photo: c.profile_sm || c.profile || ""
           }
         ])
       );
+
+      function mapRankingRow(r, { includePhoto = false } = {}) {
+        const rider = riderById.get(pointerId(r.$rider)) || {};
+        const fullName = `${rider.firstname || ""} ${rider.lastname || ""}`.trim();
+        const row = {
+          position: r.position,
+          name: fullName ? sanitizeString(fullName) : `Bib ${r.bib}`,
+          team: sanitizeString(rider.team),
+          gap: formatGap(r.relative)
+        };
+        if (includePhoto) row.photo = sanitizeString(rider.photo);
+        return row;
+      }
 
       // --- General classification as of the last completed stage.
       // CONFIRMED: "itg" (Individual Time General) is the real cumulative GC
       // — verified against 2024 stages 5/10/15/21, where it's present at
       // every stage with a near-full field and gaps that grow monotonically
       // over the race. "icg" (also observed, only on some stages) is an
-      // unrelated single-rider intermediate-checkpoint snapshot, not the GC
-      // — see plan.md for the raw samples. Do not add "icg" back to this
-      // filter.
-      const rankingRaw = await fetchJson(`/api/rankingType-${year}-${stageNumber}`);
+      // unrelated single-rider intermediate-checkpoint snapshot, not the GC.
+      // Do not add "icg" back to this filter.
       const gcSnapshot = (Array.isArray(rankingRaw) ? rankingRaw : []).find((r) => r?.type === "itg");
-
-      gc = (gcSnapshot?.rankings || []).slice(0, 10).map((r) => {
-        const rider = riderById.get(pointerId(r.$rider)) || {};
-        return {
-          position: r.position,
-          bib: r.bib,
-          name: rider.name || `Bib ${r.bib}`,
-          team: rider.team || "",
-          // `absolute`/`relative` are milliseconds on this API, not seconds.
-          gapMs: r.relative ?? null,
-          gap: formatGap(r.relative)
-        };
-      });
+      // Sliced to 8 — the largest consumer (full.liquid) only renders 8 rows.
+      gc = (gcSnapshot?.rankings || []).slice(0, 8).map((r) => mapRankingRow(r));
 
       // --- Most recent stage result (the "who won stage N" data the sibling
       // plugin doesn't surface). Separate endpoint from the GC one above.
-      const arrivalRaw = await fetchJson(`/api/rankingTypeArrival-${year}-${stageNumber}`);
       const arrivalSnapshot = Array.isArray(arrivalRaw) ? arrivalRaw[0] : null;
-
-      stageResult = (arrivalSnapshot?.rankings || []).slice(0, 5).map((r) => {
-        const rider = riderById.get(pointerId(r.$rider)) || {};
-        return {
-          position: r.position,
-          bib: r.bib,
-          name: rider.name || `Bib ${r.bib}`,
-          team: rider.team || "",
-          photo: rider.photo || "",
-          gapMs: r.relative ?? null,
-          gap: formatGap(r.relative)
-        };
-      });
+      // Sliced to 3 — the largest consumer only renders the top 3.
+      stageResult = (arrivalSnapshot?.rankings || [])
+        .slice(0, 3)
+        .map((r) => mapRankingRow(r, { includePhoto: true }));
     } catch (error) {
       gc = [];
       stageResult = [];
     }
   }
 
-  // TODO: jersey classifications (points/mountains/youth) via
-  // /api/rankingTypeJerseys-{year}-{stageNumber}, filtered by jersey `type`
-  // code. Only "pmt" has been observed so far — see plan.md before wiring
-  // this up as a real custom_fields option.
-
   return {
-    year: String(year),
-    mode: stageNumber === null ? "before_race" : "during_or_after_race",
     lastCompletedStage: lastCompletedStage
       ? { number: Number(lastCompletedStage.stage), date: lastCompletedStage.date }
       : null,
     gc,
-    stageResult,
-
-    vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
-
-    debug: {
-      currentDateKey,
-      stageNumber,
-      gcCount: gc.length,
-      stageResultCount: stageResult.length,
-      riderCount: riderById.size,
-      teamCount: teamById.size
-    }
+    stageResult
   };
 }
