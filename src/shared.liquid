@@ -1,0 +1,22 @@
+{%- comment -%}
+  SCAFFOLD — shared computed variables for all Vuelta a España Classification
+  view sizes. See ../plan.md before treating this as a finished design; it
+  currently just exposes the raw gc / stageResult arrays from transform.js.
+{%- endcomment -%}
+
+{%- assign gc_rows = gc | default: data.gc -%}
+{%- assign stage_rows = stageResult | default: data.stageResult -%}
+{%- assign last_stage = lastCompletedStage | default: data.lastCompletedStage -%}
+
+{%- assign has_gc = false -%}
+{%- if gc_rows and gc_rows.size > 0 -%}
+  {%- assign has_gc = true -%}
+{%- endif -%}
+
+{%- comment -%}
+  Inline SVG mark for the title_bar icon — a simple podium/ranking glyph,
+  single black fill, 24x24. Swap for something more considered once the
+  visual design pass happens (see plan.md).
+{%- endcomment -%}
+{%- capture title_bar_icon_svg -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M3 21V13H8V21H3ZM9 21V9H14V21H9ZM15 21V5H20V21H15Z"/></svg>{%- endcapture -%}
+{%- assign title_bar_icon = title_bar_icon_svg | base64_encode -%}

@@ -1,0 +1,22 @@
+{%- comment -%}
+  SCAFFOLD — see full.liquid comment. Leader only, quarter-screen.
+{%- endcomment -%}
+<div class="layout layout--col layout--center gap--small text--center">
+
+  <span class="label label--gray label--small">RACE LEADER</span>
+
+  {% if has_gc %}
+    {%- assign leader = gc_rows[0] -%}
+    <span class="title title--base" data-clamp="1">{{ leader.name | upcase }}</span>
+    <span class="label label--small" data-clamp="1">{{ leader.team | upcase }}</span>
+  {% else %}
+    <span class="label label--gray">Not available yet</span>
+  {% endif %}
+
+</div>
+
+<div class="title_bar">
+  <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
+  <span class="title">Vuelta a España</span>
+  <span class="instance">{% if last_stage %}Stage {{ last_stage.number }}{% else %}Classification{% endif %}</span>
+</div>

@@ -1,0 +1,50 @@
+---
+strategy: polling
+no_screen_padding: 'no'
+dark_mode: 'no'
+static_data: ''
+polling_verb: get
+framework_version: 3.2.0
+serverless_language: node
+# Stage list is a stable, always-populated endpoint (unlike ranking/jersey
+# endpoints, which 204 until the race is underway) — used the same way the
+# sibling "Vuelta a España Stages" plugin uses it, as the polling anchor.
+# transform.js does the rest of the fetching itself. See ../plan.md.
+polling_url: https://racecenter.lavuelta.es/api/stage-2026
+polling_headers: ''
+polling_body: ''
+# No plugin id yet — this has never been pushed to TRMNL. After the first
+# `trmnlp push` (no --id), copy the id TRMNL assigns back into this field
+# AND into .github/workflows/trmnl.yml, the same way the sibling plugin
+# pins id: 414982. Without it, every push creates a new orphaned plugin.
+id: ''
+oauth_enabled: 'false'
+oauth_pkce_enabled: 'no'
+oauth_authorize_url: ''
+oauth_token_url: ''
+oauth_scopes: ''
+oauth_scope_separator: ''
+oauth_refresh_url: ''
+oauth_auth_params: ''
+oauth_token_headers: ''
+oauth_token_site: ''
+oauth_token_params: ''
+oauth_token_request_auth_method: ''
+oauth_body_format: ''
+oauth_token_response_metadata: ''
+oauth_authorization_method: ''
+oauth_refresh_params: ''
+oauth_token_field_name: ''
+oauth_expiry_field_name: ''
+oauth_expiry_strategy: ''
+oauth_fixed_expiry_ms: ''
+custom_fields:
+- keyname: about_this_plugin
+  name: About This Plugin
+  field_type: author_bio
+  email_address: pedrodiazvargas@gmail.com
+  category: sports,entertainment
+  description: Fan-made La Vuelta a España Classification Dashboard for TRMNL. Shows the general classification standings and the most recent stage result. Not affiliated with, endorsed by, or sponsored by ASO or La Vuelta a España.
+name: Vuelta a España Classification
+description: ''
+refresh_interval: 15
