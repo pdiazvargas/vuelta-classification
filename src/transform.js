@@ -128,32 +128,43 @@ async function run(input) {
     .sort((a, b) => Number(a.stage) - Number(b.stage));
 
   const currentDateKey = todayMadridKey();
-  const currentYear = Number(currentDateKey.slice(0, 4));
-  const currentDay = Number(currentDateKey.slice(8, 10));
+
+  // When the selected season is fully over (today is after its last stage),
+  // there's no "most recently completed stage" to point to — cycle through
+  // the stage list by day-of-month instead, so the display still changes
+  // day to day: day 14 shows stage 14, day 22 wraps back to stage 1, etc.
+  // Same day-of-month formula the sibling "Stages" plugin uses for its
+  // pre/post-tour fallback, so a past season replays identically in both
+  // plugins. Unlike the sibling, this is *not* applied before a season's
+  // first stage — a route/profile can be meaningfully previewed ahead of
+  // race day, but GC standings and stage winners can't exist for a stage
+  // that hasn't been raced yet, so pre-race we fall through to the "no
+  // completed stage" (null) case below instead of faking one.
+  function stageForDayOfMonth() {
+    const dayOfMonth = Number(currentDateKey.slice(8, 10));
+    const stageNum = ((dayOfMonth - 1) % stages.length) + 1;
+    return stages.find((s) => Number(s.stage) === stageNum) || stages[0];
+  }
 
   let lastCompletedStage = null;
 
-  if (year === currentYear) {
-    // Live/current season — resolve the most recently completed stage by
-    // comparing each stage's real date against today.
-    const completedStages = stages.filter((s) => dateKey(s.date) < currentDateKey);
-    lastCompletedStage = completedStages.length
-      ? completedStages[completedStages.length - 1]
-      : null;
-  } else if (stages.length > 0) {
-    // Past, fully-completed season — "replay" mode. Cycle through that
-    // season's stages using today's day-of-month as the stage number (day 1
-    // = stage 1, ... day 21 = stage 21, day 22 wraps back to stage 1, etc.),
-    // ignoring that season's own real stage dates entirely — the goal is a
-    // day-by-day replay keyed to today's calendar day, not a historical replay.
-    const totalStages = stages.length;
-    const replayStageNumber = ((currentDay - 1) % totalStages) + 1;
-    const replayStage =
-      stages.find((s) => Number(s.stage) === replayStageNumber) ||
-      stages[(currentDay - 1) % totalStages];
-    // Swap in today's date so the title bar reads "as of today" instead of
-    // that stage's real historical date from the past season.
-    lastCompletedStage = { ...replayStage, date: currentDateKey };
+  if (stages.length > 0) {
+    const lastStage = stages[stages.length - 1];
+
+    if (currentDateKey > dateKey(lastStage.date)) {
+      // Replay mode — swap in today's date so the title bar reads "as of
+      // today" instead of that stage's real historical date.
+      lastCompletedStage = { ...stageForDayOfMonth(), date: currentDateKey };
+    } else {
+      // Season hasn't ended yet (either mid-race or hasn't started) —
+      // resolve the most recently completed stage from real dates. Pre-race,
+      // every stage date is still in the future, so this naturally lands on
+      // null.
+      const completedStages = stages.filter((s) => dateKey(s.date) < currentDateKey);
+      lastCompletedStage = completedStages.length
+        ? completedStages[completedStages.length - 1]
+        : null;
+    }
   }
 
   const stageNumber = lastCompletedStage ? Number(lastCompletedStage.stage) : null;
