@@ -108,29 +108,53 @@ async function run(input) {
     return fallback;
   }
 
-  // "Season" custom field lets a user browse a past year's final GC/stage
-  // winners before the current race starts (or after it's over) — pulls the
-  // first 4-digit number out of the selected option ("Current (2026)", "2024",
-  // etc.) rather than matching the label text exactly.
+  // "Season" custom field lets a user browse a past year's race, replayed
+  // day-by-day (see the stage-resolution branch below), before the current
+  // race starts or after it's over — pulls the first 4-digit number out of
+  // the selected option ("Current (2026)", "2024", etc.) rather than
+  // matching the label text exactly.
   function resolveYear() {
     const raw = String(customField("classification_year", "2025"));
     const match = raw.match(/\d{4}/);
     return match ? Number(match[0]) : 2025;
   }
 
-  // --- Stage list: used only to figure out which stage number is the most
-  // recently completed one (or null pre-race). Same endpoint the sibling
-  // "Stages" plugin polls; always populated regardless of race status.
+  // --- Stage list: used only to figure out which stage number to show (or
+  // null pre-race). Same endpoint the sibling "Stages" plugin polls; always
+  // populated regardless of race status.
   const stagesRaw = await fetchJson(`/api/stage-${year}`);
   const stages = stagesRaw
     .filter((stage) => stage && stage.stage && stage.date)
     .sort((a, b) => Number(a.stage) - Number(b.stage));
 
   const currentDateKey = todayMadridKey();
-  const completedStages = stages.filter((s) => dateKey(s.date) < currentDateKey);
-  const lastCompletedStage = completedStages.length
-    ? completedStages[completedStages.length - 1]
-    : null;
+  const currentYear = Number(currentDateKey.slice(0, 4));
+  const currentDay = Number(currentDateKey.slice(8, 10));
+
+  let lastCompletedStage = null;
+
+  if (year === currentYear) {
+    // Live/current season — resolve the most recently completed stage by
+    // comparing each stage's real date against today.
+    const completedStages = stages.filter((s) => dateKey(s.date) < currentDateKey);
+    lastCompletedStage = completedStages.length
+      ? completedStages[completedStages.length - 1]
+      : null;
+  } else if (stages.length > 0) {
+    // Past, fully-completed season — "replay" mode. Cycle through that
+    // season's stages using today's day-of-month as the stage number (day 1
+    // = stage 1, ... day 21 = stage 21, day 22 wraps back to stage 1, etc.),
+    // ignoring that season's own real stage dates entirely — the goal is a
+    // day-by-day replay keyed to today's calendar day, not a historical replay.
+    const totalStages = stages.length;
+    const replayStageNumber = ((currentDay - 1) % totalStages) + 1;
+    const replayStage =
+      stages.find((s) => Number(s.stage) === replayStageNumber) ||
+      stages[(currentDay - 1) % totalStages];
+    // Swap in today's date so the title bar reads "as of today" instead of
+    // that stage's real historical date from the past season.
+    lastCompletedStage = { ...replayStage, date: currentDateKey };
+  }
 
   const stageNumber = lastCompletedStage ? Number(lastCompletedStage.stage) : null;
 
