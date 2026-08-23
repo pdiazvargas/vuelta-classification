@@ -40,6 +40,13 @@ custom_fields:
   - 2024
   default: '2025'
   description: Which year's results to show. The 2026 Vuelta starts Aug 22 — defaults to last year's final classification and stage winners until then.
+- keyname: display_timezone
+  name: Time Zone
+  field_type: select
+  options:
+  - CEST
+  - US Eastern
+  default: CEST
 - keyname: about_this_plugin
   name: About This Plugin
   field_type: author_bio

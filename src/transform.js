@@ -77,9 +77,9 @@ async function run(input) {
     return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
   }
 
-  function todayMadridKey() {
+  function todayKeyIn(timeZone) {
     const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Madrid",
+      timeZone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
@@ -119,6 +119,14 @@ async function run(input) {
     return match ? Number(match[0]) : 2025;
   }
 
+  // Same field/logic as the sibling "Stages" plugin, so "today" agrees
+  // between the two rather than one plugin rolling to the next day hours
+  // before the other.
+  function resolveDisplayTimeZone() {
+    const raw = String(customField("display_timezone", "CEST"));
+    return /eastern/i.test(raw) ? "America/New_York" : "Europe/Madrid";
+  }
+
   // --- Stage list: used only to figure out which stage number to show (or
   // null pre-race). Same endpoint the sibling "Stages" plugin polls; always
   // populated regardless of race status.
@@ -127,7 +135,7 @@ async function run(input) {
     .filter((stage) => stage && stage.stage && stage.date)
     .sort((a, b) => Number(a.stage) - Number(b.stage));
 
-  const currentDateKey = todayMadridKey();
+  const currentDateKey = todayKeyIn(resolveDisplayTimeZone());
   const currentYear = Number(currentDateKey.slice(0, 4));
   const currentDay = Number(currentDateKey.slice(8, 10));
 
