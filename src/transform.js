@@ -230,9 +230,20 @@ async function run(input) {
 
       // --- Most recent stage result (the "who won stage N" data the sibling
       // plugin doesn't surface). Separate endpoint from the GC one above.
-      const arrivalSnapshot = Array.isArray(arrivalRaw) ? arrivalRaw[0] : null;
-      // Sliced to 3 — the largest consumer only renders the top 3.
+      // Like the GC endpoint, this one returns several ranking types in the
+      // same array (observed: "ete", "itg", "ite") — "ite" (Individual Time
+      // Etapa) is the actual stage finish order; the others are different
+      // snapshots (e.g. pre-bonus/raw time) that can rank riders differently.
+      // Blindly taking index 0 picked up whichever type happened to sort
+      // first, which showed the wrong stage podium.
+      const arrivalSnapshot = (Array.isArray(arrivalRaw) ? arrivalRaw : []).find(
+        (r) => r?.type === "ite"
+      );
+      // Some stages' "ite" rankings lead with a position: -1 placeholder
+      // (observed for a withdrawn/non-classified rider) ahead of the real
+      // 1st place — filter to real positions before slicing to the top 3.
       stageResult = (arrivalSnapshot?.rankings || [])
+        .filter((r) => Number(r?.position) >= 1)
         .slice(0, 3)
         .map((r) => mapRankingRow(r, { includePhoto: true }));
     } catch (error) {
